@@ -1,0 +1,44 @@
+{
+  "name": "engram",
+  "version": "0.1.0",
+  "description": "Neuroscience-native temporal memory for AI agents. Implements TCM, hippocampal indexing, and middle-out retrieval.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "engram": "dist/cli/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "jest --no-coverage",
+    "test:watch": "jest --watch --no-coverage",
+    "test:coverage": "jest",
+    "lint": "tsc --noEmit",
+    "cli": "ts-node src/cli/index.ts"
+  },
+  "keywords": [
+    "memory",
+    "temporal",
+    "neuroscience",
+    "tcm",
+    "hippocampal",
+    "middle-out",
+    "ai-agent"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/node": "^22.0.0",
+    "jest": "^30.0.0",
+    "ts-jest": "^29.3.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.5.0"
+  },
+  "dependencies": {
+    "commander": "^13.0.0",
+    "mongodb": "^6.3.0",
+    "uuid": "^11.0.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
