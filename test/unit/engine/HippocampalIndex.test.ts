@@ -13,7 +13,8 @@ describe('HippocampalIndex', () => {
       id: overrides.id ?? `idx-${Math.random().toString(36).slice(2)}`,
       memoryId: overrides.memoryId ?? `mem-${Math.random().toString(36).slice(2)}`,
       userId: overrides.userId ?? 'user1',
-      contextSignature: overrides.contextSignature ?? Array.from({ length: 32 }, () => Math.random() - 0.5),
+      contextSignature:
+        overrides.contextSignature ?? Array.from({ length: 32 }, () => Math.random() - 0.5),
       contentHash: overrides.contentHash ?? 'hash',
       importance: overrides.importance ?? 5,
       temporalCoordinate: overrides.temporalCoordinate ?? 1.0,
@@ -42,13 +43,21 @@ describe('HippocampalIndex', () => {
         index.addEntry(makeEntry({ userId: 'user1' }))
       }
 
-      const results = index.findNearest('user1', Array.from({ length: 32 }, () => 0), 3)
+      const results = index.findNearest(
+        'user1',
+        Array.from({ length: 32 }, () => 0),
+        3,
+      )
       expect(results.length).toBe(3)
     })
 
     it('returns fewer than k if not enough entries', () => {
       index.addEntry(makeEntry({ userId: 'user1' }))
-      const results = index.findNearest('user1', Array.from({ length: 32 }, () => 0), 5)
+      const results = index.findNearest(
+        'user1',
+        Array.from({ length: 32 }, () => 0),
+        5,
+      )
       expect(results.length).toBe(1)
     })
   })

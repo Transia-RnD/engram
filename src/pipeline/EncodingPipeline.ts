@@ -1,14 +1,18 @@
 import { MemoryRecord } from '../types/core'
 import { RememberOptions } from '../types/options'
-import { IMemoryStore, IEdgeStore } from '../types/storage'
+import { IMemoryStore, IEdgeStore, ISemanticStore } from '../types/storage'
 import { TemporalContextModel } from '../engine/TemporalContextModel'
 import { TimeCellNetwork } from '../engine/TimeCellNetwork'
 import { HippocampalIndex } from '../engine/HippocampalIndex'
 import { contiguityWeight } from '../math/decay'
+import { cosineSimilarity } from '../math/vectors'
+import { DEFAULT_SEMANTIC_CONFIG } from '../types/semantic'
+import { EngramLogger, NOOP_LOGGER } from '../logger'
 
 export interface EncodingConfig {
   neighborK: number
   forwardBias?: number
+  schemaCongruencyThreshold?: number
 }
 
 /**
@@ -28,6 +32,9 @@ export class EncodingPipeline {
   private readonly edgeStore: IEdgeStore
   private readonly neighborK: number
   private readonly forwardBias: number
+  private readonly schemaCongruencyThreshold: number
+  private readonly log: EngramLogger
+  private semanticStore?: ISemanticStore
 
   constructor(
     tcm: TemporalContextModel,
@@ -36,6 +43,7 @@ export class EncodingPipeline {
     memoryStore: IMemoryStore,
     edgeStore: IEdgeStore,
     config: EncodingConfig,
+    logger: EngramLogger = NOOP_LOGGER,
   ) {
     this.tcm = tcm
     this.tcn = tcn
@@ -44,6 +52,13 @@ export class EncodingPipeline {
     this.edgeStore = edgeStore
     this.neighborK = config.neighborK
     this.forwardBias = config.forwardBias ?? 2.0
+    this.schemaCongruencyThreshold =
+      config.schemaCongruencyThreshold ?? DEFAULT_SEMANTIC_CONFIG.schemaCongruencyThreshold
+    this.log = logger
+  }
+
+  setSemanticStore(store: ISemanticStore): void {
+    this.semanticStore = store
   }
 
   async encode(
@@ -121,6 +136,46 @@ export class EncodingPipeline {
         temporalDistance: distance,
       })
     }
+
+    // 6. Schema-gating: check against existing semantic knowledge
+    if (this.semanticStore) {
+      const nearestSemantic = await this.semanticStore.findNearestByCentroid(userId, signature, 1)
+      if (nearestSemantic.length > 0) {
+        const sim = cosineSimilarity(
+          Float64Array.from(signature),
+          Float64Array.from(nearestSemantic[0].centroidVector),
+        )
+        if (sim >= this.schemaCongruencyThreshold) {
+          // Schema-congruent: fast-path integration (CLS/SLIMM)
+          this.log.debug(
+            'ENCODING_SCHEMA_GATE',
+            `schema-congruent: memory=${record.id} matched node=${nearestSemantic[0].id} sim=${sim.toFixed(3)} — fast-path reinforcement`,
+          )
+          await this.memoryStore.update(record.id, {
+            metadata: {
+              ...record.metadata,
+              schemaCongruent: true,
+              schemaNodeId: nearestSemantic[0].id,
+            },
+          })
+          await this.semanticStore.update(nearestSemantic[0].id, {
+            lastReinforcedAt: new Date(),
+            sourceMemoryIds: [...nearestSemantic[0].sourceMemoryIds, record.id],
+            sourceCount: nearestSemantic[0].sourceCount + 1,
+          })
+        } else {
+          this.log.debug(
+            'ENCODING_SCHEMA_GATE',
+            `schema-novel: memory=${record.id} nearest node=${nearestSemantic[0].id} sim=${sim.toFixed(3)} < threshold=${this.schemaCongruencyThreshold} — episodic path`,
+          )
+        }
+      }
+    }
+
+    this.log.debug(
+      'ENCODING',
+      `→ EXIT memory=${record.id} coord=${temporalCoordinate.toFixed(6)} edges=${backwardNeighbors.length * 2}`,
+    )
 
     return record
   }

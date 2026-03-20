@@ -62,7 +62,11 @@ describe('EncodingPipeline', () => {
       await pipeline.encode('user1', 'First memory')
       const r2 = await pipeline.encode('user1', 'Second memory')
 
-      const forwardEdges = await edgeStore.getEdges('user1', (await memoryStore.findByUser('user1'))[0].id, 'forward')
+      const forwardEdges = await edgeStore.getEdges(
+        'user1',
+        (await memoryStore.findByUser('user1'))[0].id,
+        'forward',
+      )
       const backwardEdges = await edgeStore.getEdges('user1', r2.id, 'backward')
 
       expect(forwardEdges[0].weight).toBeCloseTo(backwardEdges[0].weight * 2, 5)

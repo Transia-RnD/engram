@@ -49,8 +49,16 @@ describe('TemporalContextModel', () => {
     })
 
     it('higher beta means faster drift (less context sharing)', () => {
-      const fastTCM = new TemporalContextModel({ contextDimension: 64, betaEncoding: 0.9, betaRetrieval: 0.4 })
-      const slowTCM = new TemporalContextModel({ contextDimension: 64, betaEncoding: 0.2, betaRetrieval: 0.4 })
+      const fastTCM = new TemporalContextModel({
+        contextDimension: 64,
+        betaEncoding: 0.9,
+        betaRetrieval: 0.4,
+      })
+      const slowTCM = new TemporalContextModel({
+        contextDimension: 64,
+        betaEncoding: 0.2,
+        betaRetrieval: 0.4,
+      })
 
       const inputA = randomInput(64)
       const inputB = randomInput(64)
@@ -130,14 +138,8 @@ describe('TemporalContextModel', () => {
       const sigB = tcm.compressToSignature(ctxB)
       const sigC = tcm.compressToSignature(ctxC)
 
-      const sigSimAB = cosineSimilarity(
-        Float64Array.from(sigA),
-        Float64Array.from(sigB),
-      )
-      const sigSimAC = cosineSimilarity(
-        Float64Array.from(sigA),
-        Float64Array.from(sigC),
-      )
+      const sigSimAB = cosineSimilarity(Float64Array.from(sigA), Float64Array.from(sigB))
+      const sigSimAC = cosineSimilarity(Float64Array.from(sigA), Float64Array.from(sigC))
 
       // A and B signatures should be more similar than A and C
       expect(sigSimAB).toBeGreaterThan(sigSimAC)

@@ -16,7 +16,14 @@ export interface RecallOptions {
   forwardBias?: number
   backwardBias?: number
   projectId?: string
+  /** Include semantic nodes in results (default true) */
+  includeSemanticNodes?: boolean
+  /** Minimum confidence.confidence for semantic results (default 0.1) */
+  minSemanticConfidence?: number
 }
+
+import { SemanticConsolidationConfig } from './semantic'
+import { EngramLogger, NOOP_LOGGER } from '../logger'
 
 export interface ConsolidationOptions {
   pruneThreshold?: number
@@ -24,6 +31,8 @@ export interface ConsolidationOptions {
   replayBoost?: number
   accessBoost?: number
   batchSize?: number
+  /** Semantic consolidation config (Phase 2). Omit to skip semantic consolidation. */
+  semantic?: Partial<SemanticConsolidationConfig>
 }
 
 export interface EngramConfig {
@@ -34,6 +43,7 @@ export interface EngramConfig {
   defaultForwardBias: number
   timeScaleMs: number
   neighborK: number
+  logger: EngramLogger
 }
 
 export const DEFAULT_CONFIG: EngramConfig = {
@@ -44,4 +54,5 @@ export const DEFAULT_CONFIG: EngramConfig = {
   defaultForwardBias: 2.0,
   timeScaleMs: 86400000, // 1 day in ms
   neighborK: 3,
+  logger: NOOP_LOGGER,
 }

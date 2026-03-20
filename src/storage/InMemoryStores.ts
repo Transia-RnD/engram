@@ -1,4 +1,4 @@
-import { MemoryRecord, IndexEntry, TemporalEdge } from '../types/core'
+import { MemoryRecord, TemporalEdge } from '../types/core'
 import { IMemoryStore, IEdgeStore } from '../types/storage'
 import { v4 as uuid } from 'uuid'
 
@@ -31,16 +31,18 @@ export class InMemoryMemoryStore implements IMemoryStore {
 
   async update(id: string, patch: Partial<MemoryRecord>): Promise<void> {
     const existing = this.records.get(id)
-    if (existing) {
-      this.records.set(id, { ...existing, ...patch, updatedAt: new Date() })
+    if (!existing) {
+      throw new Error(`InMemoryMemoryStore.update: record not found (id=${id})`)
     }
+    this.records.set(id, { ...existing, ...patch, updatedAt: new Date() })
   }
 
   async softDelete(id: string): Promise<void> {
     const existing = this.records.get(id)
-    if (existing) {
-      this.records.set(id, { ...existing, softDeleted: true })
+    if (!existing) {
+      throw new Error(`InMemoryMemoryStore.softDelete: record not found (id=${id})`)
     }
+    this.records.set(id, { ...existing, softDeleted: true })
   }
 
   async findByUser(
@@ -78,11 +80,7 @@ export class InMemoryMemoryStore implements IMemoryStore {
 
   async findRecentlyAccessed(userId: string, since: Date): Promise<MemoryRecord[]> {
     return Array.from(this.records.values()).filter(
-      (r) =>
-        r.userId === userId &&
-        !r.softDeleted &&
-        r.lastAccessedAt &&
-        r.lastAccessedAt >= since,
+      (r) => r.userId === userId && !r.softDeleted && r.lastAccessedAt && r.lastAccessedAt >= since,
     )
   }
 }
@@ -109,10 +107,7 @@ export class InMemoryEdgeStore implements IEdgeStore {
     direction: 'forward' | 'backward',
   ): Promise<TemporalEdge[]> {
     return Array.from(this.edges.values()).filter(
-      (e) =>
-        e.userId === userId &&
-        e.sourceMemoryId === memoryId &&
-        e.direction === direction,
+      (e) => e.userId === userId && e.sourceMemoryId === memoryId && e.direction === direction,
     )
   }
 
@@ -122,27 +117,29 @@ export class InMemoryEdgeStore implements IEdgeStore {
 
   async updateWeight(edgeId: string, newWeight: number): Promise<void> {
     const edge = this.edges.get(edgeId)
-    if (edge) this.edges.set(edgeId, { ...edge, weight: newWeight })
+    if (!edge) {
+      throw new Error(`InMemoryEdgeStore.updateWeight: edge not found (id=${edgeId})`)
+    }
+    this.edges.set(edgeId, { ...edge, weight: newWeight })
   }
 
   async incrementTraversal(edgeId: string): Promise<void> {
     const edge = this.edges.get(edgeId)
-    if (edge) {
-      this.edges.set(edgeId, {
-        ...edge,
-        traversalCount: edge.traversalCount + 1,
-        lastTraversed: new Date(),
-      })
+    if (!edge) {
+      throw new Error(`InMemoryEdgeStore.incrementTraversal: edge not found (id=${edgeId})`)
     }
+    this.edges.set(edgeId, {
+      ...edge,
+      traversalCount: edge.traversalCount + 1,
+      lastTraversed: new Date(),
+    })
   }
 
   async delete(edgeId: string): Promise<void> {
     this.edges.delete(edgeId)
   }
 
-  async bulkUpdateWeights(
-    updates: { edgeId: string; newWeight: number }[],
-  ): Promise<void> {
+  async bulkUpdateWeights(updates: { edgeId: string; newWeight: number }[]): Promise<void> {
     for (const { edgeId, newWeight } of updates) {
       await this.updateWeight(edgeId, newWeight)
     }

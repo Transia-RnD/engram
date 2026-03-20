@@ -1,4 +1,4 @@
-import { zeros, normalize, scale, add, dot, randomProjectionMatrix, project } from '../math/vectors'
+import { zeros, normalize, scale, add, randomProjectionMatrix, project } from '../math/vectors'
 
 export interface TCMConfig {
   contextDimension: number

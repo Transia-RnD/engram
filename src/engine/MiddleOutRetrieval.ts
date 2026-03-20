@@ -1,4 +1,6 @@
 import { MemoryRecord, TemporalEdge } from '../types/core'
+import { SemanticNode } from '../types/semantic'
+import { EngramLogger, NOOP_LOGGER } from '../logger'
 
 export interface ChainEntry {
   memoryId: string
@@ -11,6 +13,7 @@ export interface RetrievalResult {
   memories: MemoryRecord[]
   chain: ChainEntry[]
   totalHops: number
+  semanticNodes?: SemanticNode[]
 }
 
 export interface RetrievalOptions {
@@ -50,11 +53,13 @@ type EdgeGetter = (
 export class MiddleOutRetrieval {
   private readonly getMemory: MemoryGetter
   private readonly getEdges: EdgeGetter
+  private readonly log: EngramLogger
   private readonly hopDecay = 0.8
 
-  constructor(getMemory: MemoryGetter, getEdges: EdgeGetter) {
+  constructor(getMemory: MemoryGetter, getEdges: EdgeGetter, logger: EngramLogger = NOOP_LOGGER) {
     this.getMemory = getMemory
     this.getEdges = getEdges
+    this.log = logger
   }
 
   async retrieve(
@@ -62,6 +67,11 @@ export class MiddleOutRetrieval {
     origin: MemoryRecord,
     options: RetrievalOptions,
   ): Promise<RetrievalResult> {
+    this.log.debug(
+      'RETRIEVAL',
+      `→ ENTER origin=${origin.id} maxHops=${options.maxHops} maxResults=${options.maxResults} fwdBias=${options.forwardBias}`,
+    )
+
     const chain: ChainEntry[] = [
       { memoryId: origin.id, score: 1.0, hopDistance: 0, direction: 'origin' },
     ]
@@ -69,8 +79,8 @@ export class MiddleOutRetrieval {
     const memories: MemoryRecord[] = [origin]
 
     // Priority queues (sorted by score descending)
-    let forwardQueue: QueueItem[] = []
-    let backwardQueue: QueueItem[] = []
+    const forwardQueue: QueueItem[] = []
+    const backwardQueue: QueueItem[] = []
 
     // Seed queues from origin
     const fwdEdges = await this.getEdges(userId, origin.id, 'forward')
@@ -116,8 +126,7 @@ export class MiddleOutRetrieval {
         const memory = await this.getMemory(candidate.memoryId)
         if (!memory) continue
 
-        const score =
-          candidate.edgeWeight * Math.pow(this.hopDecay, candidate.hopDistance - 1)
+        const score = candidate.edgeWeight * Math.pow(this.hopDecay, candidate.hopDistance - 1)
 
         if (score < options.relevanceThreshold) continue
 
@@ -130,17 +139,9 @@ export class MiddleOutRetrieval {
         memories.push(memory)
 
         // Enqueue this node's edges for further expansion
-        const nextEdges = await this.getEdges(
-          userId,
-          memory.id,
-          candidate.direction,
-        )
-        const bias =
-          candidate.direction === 'forward'
-            ? options.forwardBias
-            : options.backwardBias
-        const queue =
-          candidate.direction === 'forward' ? forwardQueue : backwardQueue
+        const nextEdges = await this.getEdges(userId, memory.id, candidate.direction)
+        const bias = candidate.direction === 'forward' ? options.forwardBias : options.backwardBias
+        const queue = candidate.direction === 'forward' ? forwardQueue : backwardQueue
 
         for (const edge of nextEdges) {
           if (!visited.has(edge.targetMemoryId)) {
@@ -158,10 +159,15 @@ export class MiddleOutRetrieval {
     // Sort chain by score descending (origin always first via score 1.0)
     chain.sort((a, b) => b.score - a.score)
 
+    this.log.debug(
+      'RETRIEVAL',
+      `→ EXIT origin=${origin.id} hops=${hops} results=${Math.min(chain.length, options.maxResults)} visited=${visited.size}`,
+    )
+
     return {
-      memories: chain.slice(0, options.maxResults).map(
-        (c) => memories.find((m) => m.id === c.memoryId)!,
-      ),
+      memories: chain
+        .slice(0, options.maxResults)
+        .map((c) => memories.find((m) => m.id === c.memoryId)!),
       chain: chain.slice(0, options.maxResults),
       totalHops: hops,
     }

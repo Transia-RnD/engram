@@ -13,10 +13,7 @@ describe('ConsolidationPipeline', () => {
     pipeline = new ConsolidationPipeline(edgeStore, memoryStore)
   })
 
-  async function createEdge(
-    weight: number,
-    lastTraversed?: Date,
-  ): Promise<TemporalEdge> {
+  async function createEdge(weight: number, lastTraversed?: Date): Promise<TemporalEdge> {
     return edgeStore.create({
       userId: 'user1',
       sourceMemoryId: 'src',
@@ -30,7 +27,7 @@ describe('ConsolidationPipeline', () => {
 
   describe('decay', () => {
     it('decays all edge weights by decayRate', async () => {
-      const edge = await createEdge(1.0)
+      await createEdge(1.0)
       await pipeline.consolidate('user1', { decayRate: 0.9, pruneThreshold: 0, replayBoost: 1.0 })
 
       const edges = await edgeStore.getAllEdges('user1')
@@ -38,7 +35,7 @@ describe('ConsolidationPipeline', () => {
     })
 
     it('applies multiple decay cycles cumulatively', async () => {
-      const edge = await createEdge(1.0)
+      await createEdge(1.0)
       await pipeline.consolidate('user1', { decayRate: 0.9, pruneThreshold: 0, replayBoost: 1.0 })
       await pipeline.consolidate('user1', { decayRate: 0.9, pruneThreshold: 0, replayBoost: 1.0 })
 
@@ -50,7 +47,7 @@ describe('ConsolidationPipeline', () => {
   describe('pruning', () => {
     it('removes edges below pruneThreshold', async () => {
       await createEdge(0.01) // Below threshold
-      await createEdge(1.0)  // Above threshold
+      await createEdge(1.0) // Above threshold
 
       const result = await pipeline.consolidate('user1', {
         decayRate: 1.0, // No decay

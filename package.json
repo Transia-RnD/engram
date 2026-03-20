@@ -12,7 +12,11 @@
     "test": "jest --no-coverage",
     "test:watch": "jest --watch --no-coverage",
     "test:coverage": "jest",
-    "lint": "tsc --noEmit",
+    "lint": "eslint src/ test/",
+    "lint:fix": "eslint src/ test/ --fix",
+    "format": "prettier --write 'src/**/*.ts' 'test/**/*.ts'",
+    "format:check": "prettier --check 'src/**/*.ts' 'test/**/*.ts'",
+    "typecheck": "tsc --noEmit",
     "cli": "ts-node src/cli/index.ts"
   },
   "keywords": [
@@ -28,7 +32,13 @@
   "devDependencies": {
     "@types/jest": "^29.5.0",
     "@types/node": "^22.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.57.1",
+    "@typescript-eslint/parser": "^8.57.1",
+    "eslint": "^10.1.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
     "jest": "^30.0.0",
+    "prettier": "^3.8.1",
     "ts-jest": "^29.3.0",
     "ts-node": "^10.9.0",
     "typescript": "^5.5.0"

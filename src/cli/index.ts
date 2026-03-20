@@ -37,31 +37,36 @@ program
   .option('-n, --max-results <n>', 'Max results', '5')
   .option('-h, --max-hops <n>', 'Max traversal hops', '5')
   .option('-f, --forward-bias <n>', 'Forward bias multiplier', '2.0')
-  .action(async (query: string, opts: { user: string; maxResults: string; maxHops: string; forwardBias: string }) => {
-    const result = await engram.recall(opts.user, query, {
-      maxResults: parseInt(opts.maxResults, 10),
-      maxHops: parseInt(opts.maxHops, 10),
-      forwardBias: parseFloat(opts.forwardBias),
-    })
+  .action(
+    async (
+      query: string,
+      opts: { user: string; maxResults: string; maxHops: string; forwardBias: string },
+    ) => {
+      const result = await engram.recall(opts.user, query, {
+        maxResults: parseInt(opts.maxResults, 10),
+        maxHops: parseInt(opts.maxHops, 10),
+        forwardBias: parseFloat(opts.forwardBias),
+      })
 
-    if (result.memories.length === 0) {
-      console.log('No memories found.')
-      return
-    }
+      if (result.memories.length === 0) {
+        console.log('No memories found.')
+        return
+      }
 
-    console.log(`Found ${result.memories.length} memories (${result.totalHops} hops):`)
-    console.log()
-
-    for (const entry of result.chain) {
-      const memory = result.memories.find((m) => m.id === entry.memoryId)
-      if (!memory) continue
-      const dir = entry.direction === 'origin' ? '*' : entry.direction === 'forward' ? '>' : '<'
-      console.log(`  [${dir}] score=${entry.score.toFixed(4)} hop=${entry.hopDistance}`)
-      console.log(`      ${memory.content}`)
-      console.log(`      coord=${memory.temporalCoordinate.toFixed(6)} id=${memory.id}`)
+      console.log(`Found ${result.memories.length} memories (${result.totalHops} hops):`)
       console.log()
-    }
-  })
+
+      for (const entry of result.chain) {
+        const memory = result.memories.find((m) => m.id === entry.memoryId)
+        if (!memory) continue
+        const dir = entry.direction === 'origin' ? '*' : entry.direction === 'forward' ? '>' : '<'
+        console.log(`  [${dir}] score=${entry.score.toFixed(4)} hop=${entry.hopDistance}`)
+        console.log(`      ${memory.content}`)
+        console.log(`      coord=${memory.temporalCoordinate.toFixed(6)} id=${memory.id}`)
+        console.log()
+      }
+    },
+  )
 
 program
   .command('forget')
@@ -112,7 +117,9 @@ program
 
     for (const content of memories) {
       const record = await demo.remember(userId, content)
-      console.log(`  Encoded: ${content.substring(0, 50)}... → coord=${record.temporalCoordinate.toFixed(6)}`)
+      console.log(
+        `  Encoded: ${content.substring(0, 50)}... → coord=${record.temporalCoordinate.toFixed(6)}`,
+      )
     }
 
     console.log()
@@ -127,9 +134,16 @@ program
     for (const entry of result.chain) {
       const memory = result.memories.find((m) => m.id === entry.memoryId)
       if (!memory) continue
-      const dir = entry.direction === 'origin' ? 'ORIGIN ' : entry.direction === 'forward' ? 'FORWARD' : 'BACKWARD'
+      const dir =
+        entry.direction === 'origin'
+          ? 'ORIGIN '
+          : entry.direction === 'forward'
+            ? 'FORWARD'
+            : 'BACKWARD'
       const label = memory.content.split(':')[0]
-      console.log(`  [${dir}] ${label.padEnd(10)} score=${entry.score.toFixed(4)} hop=${entry.hopDistance}`)
+      console.log(
+        `  [${dir}] ${label.padEnd(10)} score=${entry.score.toFixed(4)} hop=${entry.hopDistance}`,
+      )
     }
 
     console.log()
@@ -147,7 +161,9 @@ program
     const bravoScore = scoreOf('Bravo')
 
     if (deltaScore > bravoScore) {
-      console.log(`PASS: Delta (forward, score=${deltaScore.toFixed(4)}) > Bravo (backward, score=${bravoScore.toFixed(4)})`)
+      console.log(
+        `PASS: Delta (forward, score=${deltaScore.toFixed(4)}) > Bravo (backward, score=${bravoScore.toFixed(4)})`,
+      )
       console.log('      Asymmetric contiguity confirmed!')
     } else {
       console.log(`UNEXPECTED: Delta=${deltaScore.toFixed(4)}, Bravo=${bravoScore.toFixed(4)}`)

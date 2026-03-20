@@ -1,4 +1,4 @@
-import { MiddleOutRetrieval, RetrievalResult } from '../../../src/engine/MiddleOutRetrieval'
+import { MiddleOutRetrieval } from '../../../src/engine/MiddleOutRetrieval'
 import { MemoryRecord, TemporalEdge } from '../../../src/types/core'
 
 /**
@@ -28,9 +28,7 @@ class MockEdgeStore {
     memoryId: string,
     direction: 'forward' | 'backward',
   ): Promise<TemporalEdge[]> {
-    return this.edges.filter(
-      (e) => e.sourceMemoryId === memoryId && e.direction === direction,
-    )
+    return this.edges.filter((e) => e.sourceMemoryId === memoryId && e.direction === direction)
   }
 }
 
