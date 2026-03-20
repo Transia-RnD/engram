@@ -1,5 +1,5 @@
 {
-  "name": "engram",
+  "name": "@transia/engram",
   "version": "0.1.0",
   "description": "Neuroscience-native temporal memory for AI agents. Implements TCM, hippocampal indexing, and middle-out retrieval.",
   "main": "dist/index.js",
