@@ -41,7 +41,7 @@ RETRIEVAL                             │ SemanticStore     │
 ## Install
 
 ```bash
-npm install engram
+npm install @transia/engram
 ```
 
 Requires Node >= 22.
@@ -51,7 +51,7 @@ Requires Node >= 22.
 ### Library
 
 ```typescript
-import { EngramService } from 'engram'
+import { EngramService } from '@transia/engram'
 
 const engram = EngramService.createInMemory()
 
@@ -110,8 +110,8 @@ const engram = new EngramService(myMongoMemoryStore, myMongoEdgeStore, {
 Engram accepts an injectable logger. By default it's silent (library behavior). Wire your own for production observability:
 
 ```typescript
-import { EngramService, CONSOLE_LOGGER } from 'engram'
-import type { EngramLogger } from 'engram'
+import { EngramService, CONSOLE_LOGGER } from '@transia/engram'
+import type { EngramLogger } from '@transia/engram'
 
 // Quick debugging
 const engram = EngramService.createInMemory({ logger: CONSOLE_LOGGER })
